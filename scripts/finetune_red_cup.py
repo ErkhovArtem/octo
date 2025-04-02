@@ -15,7 +15,7 @@ import wandb
 
 from octo.data.dataset import make_single_dataset
 from octo.model.octo_model import OctoModel
-from octo.model.components.action_heads import DiffusionActionHead
+from octo.model.components.action_heads import L1ActionHead
 from octo.utils.jax_utils import initialize_compilation_cache
 from octo.utils.spec import ModuleSpec
 from octo.utils.train_callbacks import (
@@ -43,7 +43,7 @@ except ImportError:
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_string("name", "delta joint, dif_head", "Experiment name.")
+flags.DEFINE_string("name", "test", "Experiment name.")
 flags.DEFINE_bool("debug", False, "Debug config (no wandb logging)")
 
 default_config_file = os.path.join(
@@ -148,7 +148,7 @@ def main(_):
     del config["model"]["observation_tokenizers"]["wrist"]
     # Fully override the old action head with a new one (for smaller changes, you can use update_config)
     config["model"]["heads"]["action"] = ModuleSpec.create(
-        DiffusionActionHead,
+        L1ActionHead,
         action_horizon=4,
         action_dim=7,
         readout_key="readout_action",
@@ -401,18 +401,18 @@ def main(_):
         if (i + 1) % FLAGS.config.eval_interval == 0:
             logging.info("Evaluating...")
 
-            with timer("val"):
-                val_metrics = val_callback(train_state, i + 1)
-                wandb_log(val_metrics, step=i)
+            # with timer("val"):
+            #     val_metrics = val_callback(train_state, i + 1)
+            #     wandb_log(val_metrics, step=i)
 
             with timer("visualize"):
                 viz_metrics = viz_callback(train_state, i + 1)
                 wandb_log(viz_metrics, step=i)
 
-            if rollout_callback is not None:
-                with timer("rollout"):
-                    rollout_metrics = rollout_callback(train_state, i + 1)
-                    wandb_log(rollout_metrics, step=i)
+            # if rollout_callback is not None:
+            #     with timer("rollout"):
+            #         rollout_metrics = rollout_callback(train_state, i + 1)
+            #         wandb_log(rollout_metrics, step=i)
 
         if (i + 1) % FLAGS.config.save_interval == 0 and save_dir is not None:
             logging.info("Saving checkpoint...")

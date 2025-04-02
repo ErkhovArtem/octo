@@ -4,7 +4,7 @@ and new action space (bimanual) using a simulated ALOHA cube handover dataset (h
 
 To run this example, first download and extract the dataset from here: https://rail.eecs.berkeley.edu/datasets/example_sim_data.zip
 
-python examples/02_finetune_new_observation_action.py --pretrained_path=hf://rail-berkeley/octo-small-1.5 --data_dir=...
+python examples/02_finetune_wrist.py --pretrained_path=hf://rail-berkeley/octo-small-1.5 --data_dir=...
 """
 from absl import app, flags, logging
 import flax
@@ -16,7 +16,7 @@ import wandb
 
 from octo.data.dataset import make_single_dataset
 from octo.model.components.action_heads import L1ActionHead
-from octo.model.components.tokenizers import LowdimObsTokenizer
+from octo.model.components.tokenizers import LowdimObsTokenizer, BinTokenizer
 from octo.model.octo_model import OctoModel
 from octo.utils.jax_utils import initialize_compilation_cache
 from octo.utils.spec import ModuleSpec
@@ -31,10 +31,11 @@ FLAGS = flags.FLAGS
 
 flags.DEFINE_string(
     "pretrained_path", "hf://rail-berkeley/octo-small-1.5", "Path to pre-trained Octo checkpoint directory."
+    # "pretrained_path", "/home/gigasemantics/Artem/model_checkpoints/gray_cylinder_50_dataset/octo_small/delta_joint_angles/two_cam", "Path to pre-trained Octo checkpoint directory."
 )
 flags.DEFINE_string("data_dir", "/home/gigasemantics/tensorflow_datasets", "Path to finetuning dataset, in RLDS format.")
-flags.DEFINE_string("save_dir", "/home/gigasemantics/Artem/model_checkpoints/gray_cylinder_50_dataset/octo_small/delta_joint_angles", "Directory for saving finetuning checkpoints.")
-flags.DEFINE_integer("batch_size", 24, "Batch size for finetuning.")
+flags.DEFINE_string("save_dir", "/home/gigasemantics/Artem/model_checkpoints/gray_cylinder_50_dataset/octo_small/delta_joint_angles/two_cam_100k", "Directory for saving finetuning checkpoints.")
+flags.DEFINE_integer("batch_size", 8, "Batch size for finetuning.")
 
 flags.DEFINE_bool(
     "freeze_transformer",
@@ -53,7 +54,7 @@ def main(_):
     tf.config.set_visible_devices([], "GPU")
 
     # setup wandb for logging
-    wandb.init(name="gray_cylinder_50, octo small, delta_joint_angles", project="octo_finetune")
+    wandb.init(name="gray_cylinder_50, octo small, delta_joint_angles, two cameras, start on 50k", project="octo_finetune")
 
     # load pre-trained model
     logging.info("Loading pre-trained model...")
@@ -68,9 +69,9 @@ def main(_):
         dataset_kwargs=dict(
             name="gray_cylinder50_dataset:1.0.0",
             data_dir=FLAGS.data_dir,
-            image_obs_keys={"primary": "image"},
+            image_obs_keys={"primary": "image_main", "wrist": "image_wrist"},
             action_normalization_mask = [True, True, True, True, True, True, False],
-            # proprio_obs_key="state",
+            proprio_obs_key="state",
             language_key="language_instruction",
         ),
         traj_transform_kwargs=dict(
@@ -82,7 +83,7 @@ def main(_):
         ),
         ),
         frame_transform_kwargs=dict(
-            resize_size={"primary": (256, 256)},
+            resize_size={"primary": (256, 256), "wrist": (128,128)},
         ),
         train=True,
     )
@@ -108,16 +109,17 @@ def main(_):
     # load pre-training config and modify --> remove wrist cam, add proprio input, change action head
     # following Zhao et al. we use "action chunks" of length 50 and L1 loss for ALOHA
     config = pretrained_model.config
-    del config["model"]["observation_tokenizers"]["wrist"]
+    # del config["model"]["observation_tokenizers"]["wrist"]
     ###
-    # config["model"]["observation_tokenizers"]["proprio"] = ModuleSpec.create(
-    #     LowdimObsTokenizer,
-    #     n_bins=256,
-    #     bin_type="normal",
-    #     low=-2.0,
-    #     high=2.0,
-    #     obs_keys=["proprio"],
-    # )
+    config["model"]["observation_tokenizers"]["proprio"] = ModuleSpec.create(
+        LowdimObsTokenizer,
+        discretize = True,
+        n_bins=256,
+        bin_type="uniform", # normal
+        low=-2,
+        high=2,
+        obs_keys=["proprio"],
+    )
     # Fully override the old action head with a new one (for smaller changes, you can use update_config)
     config["model"]["heads"]["action"] = ModuleSpec.create(
         L1ActionHead,

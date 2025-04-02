@@ -32,7 +32,7 @@ logging.set_verbosity(logging.WARNING)
 FLAGS = flags.FLAGS
 
 flags.DEFINE_string(
-    "checkpoint_weights_path", None, "Path to checkpoint", required=True
+    "checkpoint_weights_path", "/home/gigasemantics/Artem/model_checkpoints/drone_digits_action1", "Path to checkpoint", required=True
 )
 flags.DEFINE_integer("checkpoint_step", None, "Checkpoint step", required=True)
 
@@ -123,7 +123,7 @@ def main(_):
             tasks,
             rng=rng,
             unnormalization_statistics=pretrained_model.dataset_statistics[
-                "bridge_dataset"
+                "drone_set_digits1"
             ]["action"],
         )
         # remove batch dim

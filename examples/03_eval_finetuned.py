@@ -36,7 +36,7 @@ from octo.utils.train_callbacks import supply_rng
 FLAGS = flags.FLAGS
 
 flags.DEFINE_string(
-    "finetuned_path", None, "Path to finetuned Octo checkpoint directory."
+    "finetuned_path", "/home/gigasemantics/Artem/model_checkpoints/drone_digits_action1", "Path to finetuned Octo checkpoint directory."
 )
 
 

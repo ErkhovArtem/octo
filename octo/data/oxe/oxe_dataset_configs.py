@@ -39,6 +39,13 @@ class ActionEncoding(IntEnum):
 
 
 OXE_DATASET_CONFIGS = {
+    "drone_set_digits": {
+        "image_obs_keys": {"primary": "image", "secondary": None, "wrist": None},
+        "depth_obs_keys": {"primary": None, "secondary": None, "wrist": None},
+        "proprio_encoding": ProprioEncoding.POS_QUAT,
+        "action_encoding": ActionEncoding.EEF_POS,
+    },
+
     "fractal20220817_data": {
         "image_obs_keys": {"primary": "image", "secondary": None, "wrist": None},
         "depth_obs_keys": {"primary": None, "secondary": None, "wrist": None},
