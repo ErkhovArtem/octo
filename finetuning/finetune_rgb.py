@@ -4,7 +4,7 @@ and new action space (bimanual) using a simulated ALOHA cube handover dataset (h
 
 To run this example, first download and extract the dataset from here: https://rail.eecs.berkeley.edu/datasets/example_sim_data.zip
 
-python examples/02_finetune_new_observation_action.py --pretrained_path=hf://rail-berkeley/octo-small-1.5 --data_dir=...
+python finetuning/finetune_rgb.py --pretrained_path=hf://rail-berkeley/octo-small-1.5 --data_dir=...
 """
 from absl import app, flags, logging
 import flax
@@ -26,26 +26,11 @@ from octo.utils.train_utils import (
     process_text,
     TrainState,
 )
-
-FLAGS = flags.FLAGS
-
-flags.DEFINE_string(
-    "pretrained_path", None, "Path to pre-trained Octo checkpoint directory."
-)
-flags.DEFINE_string("data_dir", None, "Path to finetuning dataset, in RLDS format.")
-flags.DEFINE_string("save_dir", None, "Directory for saving finetuning checkpoints.")
-flags.DEFINE_integer("batch_size", 128, "Batch size for finetuning.")
-
-flags.DEFINE_bool(
-    "freeze_transformer",
-    False,
-    "Whether pre-trained transformer weights should be frozen.",
-)
-
+from config import *
 
 def main(_):
     assert (
-        FLAGS.batch_size % jax.device_count() == 0
+        batch_size % jax.device_count() == 0
     ), "Batch size must be divisible by device count."
 
     initialize_compilation_cache()
@@ -53,11 +38,11 @@ def main(_):
     tf.config.set_visible_devices([], "GPU")
 
     # setup wandb for logging
-    wandb.init(name="finetune_aloha", project="octo")
+    wandb.init(name=experiment_name, project="octo")
 
     # load pre-trained model
     logging.info("Loading pre-trained model...")
-    pretrained_model = OctoModel.load_pretrained(FLAGS.pretrained_path)
+    pretrained_model = OctoModel.load_pretrained(pretrained_path)
 
     # make finetuning dataset
     # apply Gaussian normalization, load chunks of 50 actions since we'll train with action chunking
@@ -66,18 +51,23 @@ def main(_):
     logging.info("Loading finetuning dataset...")
     dataset = make_single_dataset(
         dataset_kwargs=dict(
-            name="aloha_sim_cube_scripted_dataset",
-            data_dir=FLAGS.data_dir,
-            image_obs_keys={"primary": "top"},
+            name=dataset_name,
+            data_dir=data_dir,
+            image_obs_keys = {"primary": "image_main", "wrist": "image_wrist"},
             proprio_obs_key="state",
             language_key="language_instruction",
         ),
         traj_transform_kwargs=dict(
-            window_size=1,
-            action_horizon=50,
+            window_size=2,
+            action_horizon=4,
+            goal_relabeling_strategy = None,
+            task_augment_kwargs=dict(
+            keep_image_prob=0.0,
+        ),
         ),
         frame_transform_kwargs=dict(
-            resize_size={"primary": (256, 256)},
+            resize_size={"primary": (256, 256), "wrist": (128, 128)},
+            # depth_resize_size={"primary": (256, 256)},
         ),
         train=True,
     )
@@ -85,7 +75,7 @@ def main(_):
         dataset.repeat()
         .unbatch()
         .shuffle(10000)  # can reduce this if RAM consumption too high
-        .batch(FLAGS.batch_size)
+        .batch(batch_size)
         .iterator()
     )
 
@@ -103,12 +93,13 @@ def main(_):
     # load pre-training config and modify --> remove wrist cam, add proprio input, change action head
     # following Zhao et al. we use "action chunks" of length 50 and L1 loss for ALOHA
     config = pretrained_model.config
-    del config["model"]["observation_tokenizers"]["wrist"]
+    # del config["model"]["observation_tokenizers"]["wrist"]
     ###
     config["model"]["observation_tokenizers"]["proprio"] = ModuleSpec.create(
         LowdimObsTokenizer,
+        discretize = True,
         n_bins=256,
-        bin_type="normal",
+        bin_type="uniform",
         low=-2.0,
         high=2.0,
         obs_keys=["proprio"],
@@ -116,8 +107,8 @@ def main(_):
     # Fully override the old action head with a new one (for smaller changes, you can use update_config)
     config["model"]["heads"]["action"] = ModuleSpec.create(
         L1ActionHead,
-        action_horizon=50,
-        action_dim=14,
+        action_horizon=4,
+        action_dim=7,
         readout_key="readout_action",
     )
 
@@ -144,7 +135,7 @@ def main(_):
     )
     tx = optax.adamw(learning_rate)
     frozen_keys = model.config["optimizer"]["frozen_keys"]
-    if FLAGS.freeze_transformer:
+    if freeze_transformer:
         frozen_keys.append("BlockTransformer_0")
     tx = freeze_weights(tx, model.params, frozen_keys)
     train_state = TrainState.create(
@@ -182,7 +173,7 @@ def main(_):
 
     # run finetuning loop
     logging.info("Starting finetuning...")
-    for i in tqdm.tqdm(range(5000), total=5000, dynamic_ncols=True):
+    for i in tqdm.tqdm(range(50000), total=50000, dynamic_ncols=True):
         batch = next(train_data_iter)
         train_state, update_info = train_step(train_state, batch)
         if (i + 1) % 100 == 0:
@@ -191,9 +182,9 @@ def main(_):
                 flax.traverse_util.flatten_dict({"training": update_info}, sep="/"),
                 step=i,
             )
-        if (i + 1) % 1000 == 0:
+        if (i + 1) % 25000 == 0:
             # save checkpoint
-            train_state.model.save_pretrained(step=i, checkpoint_path=FLAGS.save_dir)
+            train_state.model.save_pretrained(step=i, checkpoint_path=save_dir)
 
 
 if __name__ == "__main__":
