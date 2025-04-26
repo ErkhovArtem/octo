@@ -75,6 +75,7 @@ class UR3Teleop:
         :param joints_positions: A list or numpy array of 6 joint angles in radians.
         :param gripper_position: The desired gripper position (if a gripper is available).
         """
+        
         if isinstance(joints_positions, np.ndarray):
             joints_positions = joints_positions.tolist()
 
@@ -99,7 +100,11 @@ class UR3Teleop:
         """
         Moves the robot to its stored base pose.
         """
-        self.move_to_pose(self.base_pose, 0)
+        self.gripper.move(
+                0, self.gripper_velocity, self.gripper_force
+            )
+        sleep(1)
+        self.move_to_pose(self.base_pose)
 
     def get_current_tcp_pose(self):
         """

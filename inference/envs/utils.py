@@ -30,3 +30,4 @@ class Logger:
         now = datetime.now()
         filename = f'log_{now.month}_{now.day}_{now.hour}{now.minute}{now.second}.npy'
         np.save(self.path / filename, self.log_data)
+        self.log_data = []

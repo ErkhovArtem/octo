@@ -8,12 +8,12 @@ from config import *
 import sys
 import os
 
-lib_path = os.path.join(os.path.dirname(__file__), 'env')
+lib_path = os.path.join(os.path.dirname(__file__), 'envs')
 sys.path.append(lib_path)
 from cameras import RealSenseCamera, WebCamera
 from echo_teleoperation import Echo
 from ur_rtde import UR3Teleop
-from env import MyEnv
+from env import ForcefullEnv, ForcelessEnv
 from utils import Logger, normalize_proprio
 
 def pause():
@@ -30,6 +30,7 @@ def pause():
                 print('---------------------------------')
                 print('Move to base pose...')
                 env.reset()
+                logger.save()
                 timeout = True
         except: 
             pass
@@ -60,7 +61,10 @@ camera_wrist = WebCamera(camera_id = wrist_camera_id)
 device = Echo()
 
 # create env
-env = MyEnv(robot, device, camera_main, camera_wrist, env_config)
+if use_forse:
+    env = ForcefullEnv(robot, device, camera_main, camera_wrist, env_config)
+else:
+    env = ForcelessEnv(robot, device, camera_main, camera_wrist, env_config)
 logger = Logger()
 
 task_texts = language_instruction

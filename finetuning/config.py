@@ -1,8 +1,8 @@
 from typing import Any, Dict
 
-save_dir = "/home/hyperdog/octo/checkpoints/shampoo_100_no_force"
-experiment_name = "shampoo_100_no_force"
-dataset_name = "grasping_dataset:1.0.0"
+save_dir = "/home/hyperdog/octo/checkpoints/tomato_100"
+experiment_name = "tomato_100"
+dataset_name = "grasping_dataset:1.0.1"
 
 # defaul parameters
 pretrained_path =  "hf://rail-berkeley/octo-small-1.5" #"/home/hyperdog/octo/checkpoints/grasping_60" # 

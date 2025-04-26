@@ -40,7 +40,7 @@ class RealSenseCamera:
         # # Initialize the time of the last captured frame to zero.
         # self.last_capture_time = 0
 
-    def get_frame(self, depth = True):
+    def get_frame(self, depth):
         """
         Capture and return a color frame as a NumPy array if the capture interval has elapsed.
         Args:
@@ -69,8 +69,7 @@ class RealSenseCamera:
 
         # Convert the color frame data to a NumPy array.
         rgb_image = np.asanyarray(color_frame.get_data())
-        depth_image = np.asanyarray(depth_frame.get_data())
-
+        
         # # Update the last capture time to the current time.
         # self.last_capture_time = current_time
 
@@ -78,8 +77,9 @@ class RealSenseCamera:
         rgb_image = cv2.cvtColor(rgb_image, cv2.COLOR_BGR2RGB)
 
         if depth:
-            image = np.concat([rgb_image, depth_image[..., np.newaxis]], axis=-1)
-            return image
+            depth_image = np.asanyarray(depth_frame.get_data())
+            # image = np.concat([rgb_image, depth_image[..., np.newaxis]], axis=-1)
+            return rgb_image, depth_image
 
         # Return the captured frame as a NumPy array.
         return rgb_image

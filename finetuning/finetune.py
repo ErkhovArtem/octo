@@ -13,7 +13,6 @@ import optax
 import tensorflow as tf
 import tqdm
 import wandb
-from typing import Any, Dict
 
 from octo.data.dataset import make_single_dataset
 from octo.model.components.action_heads import L1ActionHead
@@ -55,9 +54,9 @@ def main(_):
             name=dataset_name,
             data_dir=data_dir,
             image_obs_keys = {"primary": "image_main", "wrist": "image_wrist"},
-            proprio_obs_key="proprio",
+            proprio_obs_key="state",
             language_key="language_instruction",
-            standardize_fn = ModuleSpec.create("octo.data.oxe.oxe_standardization_transforms:my_dataset_transform",),
+            # standardize_fn = ModuleSpec.create("octo.data.oxe.oxe_standardization_transforms:my_dataset_transform",),
         ),
         traj_transform_kwargs=dict(
             window_size=2,

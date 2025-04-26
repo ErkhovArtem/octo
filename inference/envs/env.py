@@ -73,7 +73,7 @@ class BaseEnv(ABC):
     def _apply_action(self, action):
         pass
 
-class MyEnv(BaseEnv):
+class EchoEnv(BaseEnv):
     def __init__(self, robot, device, camera_main, camera_wrist, env_config):
         # Call the parent's __init__
         super().__init__(robot, device, camera_main, camera_wrist, env_config)
@@ -86,17 +86,6 @@ class MyEnv(BaseEnv):
         image = jnp.array(Image.fromarray(image).resize((resize, resize), Image.Resampling.LANCZOS))
         return image
     
-    def _get_proprio(self):
-        data_from_echo = self.device.read_pose_rad(dof_count=7, read_force_sensor=True)
-        if data_from_echo is None:
-            return self.previous_state['proprio']
-        force = data_from_echo[4][0]/4095
-        if force > 0.8:
-            raise RuntimeError('Can not read from the wrist camera')
-        gripper_pose = self.robot.get_current_gripper_pose()[0]/255
-        proprio = jnp.array([gripper_pose, force])
-        return proprio
-    
     def _apply_action(self, action):
 
         current_angles = self.robot.get_current_joint_angles()
@@ -108,3 +97,35 @@ class MyEnv(BaseEnv):
         current_gripper_pose = self.robot.get_current_gripper_pose()
         target_gripper_pose = int(current_gripper_pose + round(action[-1] * 255))
         self.robot.move_to_pose(target_angles, target_gripper_pose)
+
+class ForcefullEnv(EchoEnv):
+    def __init__(self, robot, device, camera_main, camera_wrist, env_config):
+        # Call the parent's __init__
+        super().__init__(robot, device, camera_main, camera_wrist, env_config)
+
+    def _get_proprio(self):
+            data_from_echo = self.device.read_pose_rad(dof_count=7, read_force_sensor=True)
+            if data_from_echo is None:
+                return self.previous_state['proprio']
+            force = data_from_echo[4][0]/4095
+            if force > 0.8:
+                raise RuntimeError('Can not read from the wrist camera')
+            gripper_pose = self.robot.get_current_gripper_pose()[0]/255
+            proprio = jnp.array([gripper_pose, force])
+            return proprio
+    
+class ForcelessEnv(EchoEnv):
+    def __init__(self, robot, device, camera_main, camera_wrist, env_config):
+        # Call the parent's __init__
+        super().__init__(robot, device, camera_main, camera_wrist, env_config)
+
+    def _get_proprio(self):
+            data_from_echo = self.device.read_pose_rad(dof_count=7, read_force_sensor=True)
+            if data_from_echo is None:
+                return self.previous_state['proprio']
+            force = data_from_echo[4][0]/4095
+            if force > 0.8:
+                raise RuntimeError('Can not read from the wrist camera')
+            gripper_pose = self.robot.get_current_gripper_pose()[0]/255
+            proprio = jnp.array([gripper_pose])
+            return proprio
