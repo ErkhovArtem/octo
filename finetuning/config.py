@@ -1,6 +1,8 @@
-save_dir = "/home/hyperdog/octo/checkpoints/shampoo_50"
-experiment_name = "shampoo_50"
-dataset_name = "grasping_dataset:1.0.1"
+from typing import Any, Dict
+
+save_dir = "/home/hyperdog/octo/checkpoints/shampoo_100_no_force"
+experiment_name = "shampoo_100_no_force"
+dataset_name = "grasping_dataset:1.0.0"
 
 # defaul parameters
 pretrained_path =  "hf://rail-berkeley/octo-small-1.5" #"/home/hyperdog/octo/checkpoints/grasping_60" # 

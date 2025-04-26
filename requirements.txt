@@ -3,6 +3,7 @@ numpy == 1.24.3
 ml_dtypes == 0.2.0
 chex == 0.1.85
 optax == 0.1.5
+tensorflow[and-cuda] == 2.15.1
 tensorflow_probability == 0.23.0
 jax == 0.4.20
 distrax == 0.1.5

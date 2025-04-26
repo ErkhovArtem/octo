@@ -23,6 +23,9 @@ from octo.data.utils.data_utils import (
     relabel_actions,
 )
 
+def my_dataset_transform(trajectory: Dict[str, Any]) -> Dict[str, Any]:
+        trajectory["observation"]["proprio"] = trajectory["observation"]["state"][:, 0][:, None]
+        return trajectory
 
 def bridge_dataset_transform(trajectory: Dict[str, Any]) -> Dict[str, Any]:
     # NOTE: this is not actually the official OXE copy of bridge, it is our own more up-to-date copy that you

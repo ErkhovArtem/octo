@@ -13,7 +13,8 @@ sys.path.append(lib_path)
 from cameras import RealSenseCamera, WebCamera
 from echo_teleoperation import Echo
 from ur_rtde import UR3Teleop
-from env import Env
+from env import MyEnv
+from utils import Logger, normalize_proprio
 
 def pause():
     timeout = False
@@ -59,12 +60,17 @@ camera_wrist = WebCamera(camera_id = wrist_camera_id)
 device = Echo()
 
 # create env
-env_config = {"max_joint_rotation": 0.15,
-              "action_proprio_metadata": model.dataset_statistics}
-env = Env(robot, device, camera_main, camera_wrist, env_config)
+env = MyEnv(robot, device, camera_main, camera_wrist, env_config)
+logger = Logger()
 
 task_texts = language_instruction
 task = model.create_tasks(texts=task_texts)
+
+action_proprio_metadata = jax.tree_map(
+                lambda x: np.array(x),
+                model.dataset_statistics,
+                is_leaf=lambda x: isinstance(x, list),
+            )
 
 # reset env
 observation = env.reset()
@@ -81,6 +87,9 @@ while(1):
     action = model.sample_actions(observation, task, rng=jax.random.PRNGKey(0),
                                 unnormalization_statistics=model.dataset_statistics["action"],)[0][0]
     observation = env.step(action)
+    logger.log(observation)
+    observation = normalize_proprio(observation, action_proprio_metadata["proprio"])
+    
 
     try:  # used try so that if user pressed other than the given key error will not be shown 
         if keyboard.is_pressed('s'):
@@ -96,6 +105,7 @@ while(1):
     except: 
         pass
 
+logger.save()
 camera_main.release()
 camera_wrist.release()
 

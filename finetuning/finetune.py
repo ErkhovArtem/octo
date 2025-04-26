@@ -13,6 +13,7 @@ import optax
 import tensorflow as tf
 import tqdm
 import wandb
+from typing import Any, Dict
 
 from octo.data.dataset import make_single_dataset
 from octo.model.components.action_heads import L1ActionHead
@@ -54,8 +55,9 @@ def main(_):
             name=dataset_name,
             data_dir=data_dir,
             image_obs_keys = {"primary": "image_main", "wrist": "image_wrist"},
-            proprio_obs_key="state",
+            proprio_obs_key="proprio",
             language_key="language_instruction",
+            standardize_fn = ModuleSpec.create("octo.data.oxe.oxe_standardization_transforms:my_dataset_transform",),
         ),
         traj_transform_kwargs=dict(
             window_size=2,
@@ -134,6 +136,10 @@ def main(_):
         [optax.linear_schedule(0, 3e-5, 100), optax.constant_schedule(3e-5)], [100]
     )
     tx = optax.adamw(learning_rate)
+
+    # add gradient accumulation
+    # tx = optax.MultiSteps(tx, 4)
+
     frozen_keys = model.config["optimizer"]["frozen_keys"]
     if freeze_transformer:
         frozen_keys.append("BlockTransformer_0")
@@ -182,7 +188,7 @@ def main(_):
                 flax.traverse_util.flatten_dict({"training": update_info}, sep="/"),
                 step=i,
             )
-        if (i + 1) % 25000 == 0:
+        if (i + 1) % 10000 == 0:
             # save checkpoint
             train_state.model.save_pretrained(step=i, checkpoint_path=save_dir)
 
