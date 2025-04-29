@@ -100,7 +100,6 @@ class EchoEnv(BaseEnv):
 
 class ForcefullEnv(EchoEnv):
     def __init__(self, robot, device, camera_main, camera_wrist, env_config):
-        # Call the parent's __init__
         super().__init__(robot, device, camera_main, camera_wrist, env_config)
 
     def _get_proprio(self):
@@ -116,7 +115,6 @@ class ForcefullEnv(EchoEnv):
     
 class ForcelessEnv(EchoEnv):
     def __init__(self, robot, device, camera_main, camera_wrist, env_config):
-        # Call the parent's __init__
         super().__init__(robot, device, camera_main, camera_wrist, env_config)
 
     def _get_proprio(self):

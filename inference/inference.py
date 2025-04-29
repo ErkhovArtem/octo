@@ -4,7 +4,7 @@ import numpy as np
 import keyboard 
 from octo.model.octo_model import OctoModel
 import jax
-from config import *
+from inference_config import *
 import sys
 import os
 
@@ -65,7 +65,7 @@ if use_forse:
     env = ForcefullEnv(robot, device, camera_main, camera_wrist, env_config)
 else:
     env = ForcelessEnv(robot, device, camera_main, camera_wrist, env_config)
-logger = Logger()
+logger = Logger(experiment_name = experiment_name)
 
 task_texts = language_instruction
 task = model.create_tasks(texts=task_texts)

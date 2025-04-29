@@ -4,7 +4,7 @@ and new action space (bimanual) using a simulated ALOHA cube handover dataset (h
 
 To run this example, first download and extract the dataset from here: https://rail.eecs.berkeley.edu/datasets/example_sim_data.zip
 
-python finetuning/finetune_rgb.py --pretrained_path=hf://rail-berkeley/octo-small-1.5 --data_dir=...
+python finetuning/finetune.py --pretrained_path=hf://rail-berkeley/octo-small-1.5 --data_dir=...
 """
 from absl import app, flags, logging
 import flax
@@ -26,7 +26,7 @@ from octo.utils.train_utils import (
     process_text,
     TrainState,
 )
-from config import *
+from finetune_config import *
 
 def main(_):
     assert (
@@ -38,7 +38,7 @@ def main(_):
     tf.config.set_visible_devices([], "GPU")
 
     # setup wandb for logging
-    wandb.init(name=experiment_name, project="octo")
+    wandb.init(name=wandb_experiment_name, project="octo")
 
     # load pre-trained model
     logging.info("Loading pre-trained model...")
@@ -54,9 +54,9 @@ def main(_):
             name=dataset_name,
             data_dir=data_dir,
             image_obs_keys = {"primary": "image_main", "wrist": "image_wrist"},
-            proprio_obs_key="state",
+            proprio_obs_key="proprio",
             language_key="language_instruction",
-            # standardize_fn = ModuleSpec.create("octo.data.oxe.oxe_standardization_transforms:my_dataset_transform",),
+            standardize_fn = ModuleSpec.create(f"octo.data.oxe.oxe_standardization_transforms:" + standardize_fn,),
         ),
         traj_transform_kwargs=dict(
             window_size=2,

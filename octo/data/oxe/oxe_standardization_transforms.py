@@ -23,8 +23,12 @@ from octo.data.utils.data_utils import (
     relabel_actions,
 )
 
-def my_dataset_transform(trajectory: Dict[str, Any]) -> Dict[str, Any]:
-        trajectory["observation"]["proprio"] = trajectory["observation"]["state"][:, 0][:, None]
+def select_gripper_position(trajectory: Dict[str, Any]) -> Dict[str, Any]:
+        trajectory["observation"]["proprio"] = trajectory["observation"]["state"][:, -2][:, None]
+        return trajectory
+
+def select_gripper_position_and_force(trajectory: Dict[str, Any]) -> Dict[str, Any]:
+        trajectory["observation"]["proprio"] = trajectory["observation"]["state"][:, -2:]
         return trajectory
 
 def bridge_dataset_transform(trajectory: Dict[str, Any]) -> Dict[str, Any]:

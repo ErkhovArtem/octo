@@ -17,17 +17,21 @@ def normalize_proprio(observation, metadata):
     return observation
 
 class Logger:
-    def __init__(self):
+    def __init__(self, experiment_name):
         self.log_data = []
-        self.path = Path() / "logs"
-        self.path.mkdir(exist_ok=True)
+        now = datetime.now()
+        experiment_name += f'_{now.month}_{now.day}_{now.hour}{now.minute}{now.second}'
+        self.log_dir = Path() / "logs" / experiment_name
+        self.log_dir.mkdir()
 
     def log(self, observation):
         data = observation['proprio'][0, 1, 1]
         self.log_data.append(data)
 
     def save(self):
-        now = datetime.now()
-        filename = f'log_{now.month}_{now.day}_{now.hour}{now.minute}{now.second}.npy'
-        np.save(self.path / filename, self.log_data)
+        episode_number = 1
+        while (self.log_dir / f"episode_{episode_number}.npy").exists():
+            episode_number += 1
+        filename = f'episode_{episode_number}.npy'
+        np.save(self.log_dir / filename, self.log_data)
         self.log_data = []
