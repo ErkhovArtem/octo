@@ -11,11 +11,11 @@ experiment_name = "shampoo"
 language_instruction = ["Pick up a shampoo bottle."]
 checkpoint_step = 29999
 if proprio_input == "force_and_position":
-        checkpoint_path = "/home/hyperdog/octo/checkpoints/shampoo_100"     
+        checkpoint_path = "/home/hyperdog/octo/checkpoints/shampoo_100_force_and_position"     
 elif proprio_input == "position":
-        checkpoint_path = "/home/hyperdog/octo/checkpoints/shampoo_100_no_force"
+        checkpoint_path = "/home/hyperdog/octo/checkpoints/shampoo_100_position"
 elif proprio_input == "force":
-        checkpoint_path = "/home/hyperdog/octo/checkpoints/shampoo_100_only_force"
+        checkpoint_path = "/home/hyperdog/octo/checkpoints/shampoo_100_force"
 else:
         raise ValueError(f"<{proprio_input}> is wrong type of proprio data.")
 

@@ -1,9 +1,9 @@
 import os
 
-save_dir = "/home/hyperdog/octo/checkpoints/shampoo_100_only_force"
+save_dir = "/home/hyperdog/octo/checkpoints/shampoo_100_force"
 os.makedirs(save_dir, exist_ok=True)
 
-wandb_experiment_name = "shampoo_100_only_force"
+wandb_experiment_name = "shampoo_100_force"
 dataset_name = "grasping_dataset:1.0.0"
 # standardize_fn = "select_gripper_position_and_force"
 # standardize_fn = "select_gripper_position"
