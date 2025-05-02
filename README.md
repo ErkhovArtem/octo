@@ -65,19 +65,12 @@ At the moment we provide the following model versions:
 
 |                     | File                                                    | Description                                                                   |
 |---------------------|---------------------------------------------------------|-------------------------------------------------------------------------------|
-| Finetuning Loop     | [finetune.py](finetuning/finetune.py)                      | Main finetuning script.                                                       |
-
-| Finetuning Hyperparameters     | [funetune_config.py](finetuning/finetune_config.py)       | Defines main hyperparameters for the finetuning run.                             |
-
-| Inference Loop           | [inference.py](inference/inference.py)                 | Main inference 
-script.     |
-
-| Inference Hyperparameters     | [inference_config.py](inference/inference_config.py)       | Defines main hyperparameters for the inference run.
-run.                             |
-
-| Envs          | [env.py](inference/envs/env.py)    | Custom robot environment                       |
-
-| Visualization       | [visualizer.ipynb](inference/visualizer.ipynb) | Visualization of force and gripper position.                        |
+| Finetuning Loop     | [finetune.py](finetuning/finetune.py)                   | Main finetuning script.                                                       |
+| Finetuning Config   | [funetune_config.py](finetuning/finetune_config.py)     | Defines main hyperparameters for the finetuning run.                          |
+| Inference Loop      | [inference.py](inference/inference.py)                  | Main inference script.                                                        |
+| Inference Config    | [inference_config.py](inference/inference_config.py)    | Defines main hyperparameters for the inference run.                           |
+| Environment         | [env.py](inference/envs/env.py)                         | Custom robot environment                                                      |
+| Visualization       | [visualizer.ipynb](inference/visualizer.ipynb)          | Visualization of force and gripper position.                                  |
 
 <!-- ## FAQ
 #### What is the `timestep_pad_mask` in the observation dictionary?
