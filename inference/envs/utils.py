@@ -10,28 +10,44 @@ def normalize(data, metadata):
             data,
         )
 
-def normalize_proprio(observation, metadata):
+def construct_observation(observation, metadata, proprio_data):
+    # select observations that will be passed into model
+    if proprio_data == "force_and_position":
+        observation['proprio'] = observation['proprio'][..., -2:]
+    elif proprio_data == "position":
+        observation['proprio'] = observation['proprio'][..., -2][..., None]
+    else:
+        observation['proprio'] = observation['proprio'][..., -1][..., None]
 
+    # normalize observations using dataset statistics
     proprio_norm = normalize(observation['proprio'][0], metadata)
     observation['proprio'] = observation['proprio'].at[0].set(proprio_norm)
     return observation
 
 class Logger:
-    def __init__(self, experiment_name):
-        self.log_data = []
-        now = datetime.now()
-        experiment_name += f'_{now.month}_{now.day}_{now.hour}{now.minute}{now.second}'
-        self.log_dir = Path() / "logs" / experiment_name
-        self.log_dir.mkdir()
+    def __init__(self, experiment_name, proprio_data):
+        self.log_data = np.zeros((0, 2))
+        self.log_dir = Path() / "logs" / experiment_name / proprio_data
+        self.log_dir.mkdir(parents=True, exist_ok= True)
 
     def log(self, observation):
-        data = observation['proprio'][0, 1, 1]
-        self.log_data.append(data)
+        data = observation['proprio'][0, 1, -2:][None, ...]
+        self.log_data = np.concatenate([self.log_data, data])
+
+    def reset(self):
+        self.log_data = np.zeros((0, 2))
 
     def save(self):
+        if len(self.log_data) == 0:
+            return
         episode_number = 1
         while (self.log_dir / f"episode_{episode_number}.npy").exists():
             episode_number += 1
         filename = f'episode_{episode_number}.npy'
         np.save(self.log_dir / filename, self.log_data)
-        self.log_data = []
+        self.log_data = np.zeros((0, 2))
+
+class NullLogger:
+    def __init__(self, *args, **kwargs): pass
+    def log(self, *args, **kwargs): pass
+    def save(self, *args, **kwargs): pass

@@ -1,15 +1,11 @@
-import numpy as np
 import time
 import copy
 import jax.numpy as jnp
 from cameras import RealSenseCamera
 from PIL import Image
-import jax
-import os
-from abc import ABC, abstractmethod
 
+class EchoEnv:
 
-class BaseEnv(ABC):
     def __init__(self, robot, device, camera_main, camera_wrist, env_config):
         self.camera_main = camera_main
         self.camera_wrist = camera_wrist
@@ -60,23 +56,6 @@ class BaseEnv(ABC):
         time.sleep(1)
         self.previous_state = None
         return self.step()
-    
-    @abstractmethod
-    def _get_image(self, camera, resize):
-        pass
-
-    @abstractmethod
-    def _get_proprio(self):
-        pass
-    
-    @abstractmethod
-    def _apply_action(self, action):
-        pass
-
-class EchoEnv(BaseEnv):
-    def __init__(self, robot, device, camera_main, camera_wrist, env_config):
-        # Call the parent's __init__
-        super().__init__(robot, device, camera_main, camera_wrist, env_config)
 
     def _get_image(self, camera, resize):
         if isinstance(camera, RealSenseCamera):
@@ -88,42 +67,25 @@ class EchoEnv(BaseEnv):
     
     def _apply_action(self, action):
 
-        current_angles = self.robot.get_current_joint_angles()
-        target_angles = current_angles + np.clip(action[:6], a_min = -self.env_config['max_joint_rotation'], 
-                                                 a_max = self.env_config['max_joint_rotation'])
         if max(abs(action[:6])) > self.env_config['max_joint_rotation']:
-            print(f"Action was clipped! Max action is {max(abs(action[:6]))}")
+            raise RuntimeError(f"Max action {max(abs(action[:6]))} is over limit!")
 
+        current_angles = self.robot.get_current_joint_angles()
+        target_angles = current_angles + action[:6]
+        
         current_gripper_pose = self.robot.get_current_gripper_pose()
         target_gripper_pose = int(current_gripper_pose + round(action[-1] * 255))
         self.robot.move_to_pose(target_angles, target_gripper_pose)
 
-class ForcefullEnv(EchoEnv):
-    def __init__(self, robot, device, camera_main, camera_wrist, env_config):
-        super().__init__(robot, device, camera_main, camera_wrist, env_config)
-
     def _get_proprio(self):
-            data_from_echo = self.device.read_pose_rad(dof_count=7, read_force_sensor=True)
-            if data_from_echo is None:
-                return self.previous_state['proprio']
-            force = data_from_echo[4][0]/4095
-            if force > 0.8:
-                raise RuntimeError('Can not read from the wrist camera')
-            gripper_pose = self.robot.get_current_gripper_pose()[0]/255
-            proprio = jnp.array([gripper_pose, force])
-            return proprio
+        data_from_echo = self.device.read_pose_rad(dof_count=7, read_force_sensor=True)
+        if data_from_echo is None:
+            return self.previous_state['proprio']
+        force = data_from_echo[4][0]/4095
+        if force > self.env_config["max_force"]:
+            raise RuntimeError('Contact force is over limit!')
+        gripper_pose = self.robot.get_current_gripper_pose()[0]/255
+        proprio = jnp.array([gripper_pose, force])
+        return proprio
+
     
-class ForcelessEnv(EchoEnv):
-    def __init__(self, robot, device, camera_main, camera_wrist, env_config):
-        super().__init__(robot, device, camera_main, camera_wrist, env_config)
-
-    def _get_proprio(self):
-            data_from_echo = self.device.read_pose_rad(dof_count=7, read_force_sensor=True)
-            if data_from_echo is None:
-                return self.previous_state['proprio']
-            force = data_from_echo[4][0]/4095
-            if force > 0.8:
-                raise RuntimeError('Can not read from the wrist camera')
-            gripper_pose = self.robot.get_current_gripper_pose()[0]/255
-            proprio = jnp.array([gripper_pose])
-            return proprio

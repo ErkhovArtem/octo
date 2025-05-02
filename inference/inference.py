@@ -13,8 +13,8 @@ sys.path.append(lib_path)
 from cameras import RealSenseCamera, WebCamera
 from echo_teleoperation import Echo
 from ur_rtde import UR3Teleop
-from env import ForcefullEnv, ForcelessEnv
-from utils import Logger, normalize_proprio
+from env import EchoEnv
+from utils import Logger, NullLogger, construct_observation
 
 def pause():
     timeout = False
@@ -28,8 +28,17 @@ def pause():
         try: 
             if keyboard.is_pressed('b'):
                 print('---------------------------------')
-                print('Move to base pose...')
+                print('Move to base pose.')
                 env.reset()
+                logger.reset()
+                timeout = True
+        except: 
+            pass
+
+        try: 
+            if keyboard.is_pressed('l'):
+                print('---------------------------------')
+                print('Episode saved.')
                 logger.save()
                 timeout = True
         except: 
@@ -38,7 +47,7 @@ def pause():
         try: 
             if keyboard.is_pressed('r'):
                 print('---------------------------------')
-                print('Program running...')
+                print('Program is running.')
                 return 0
         except: 
             pass
@@ -61,11 +70,12 @@ camera_wrist = WebCamera(camera_id = wrist_camera_id)
 device = Echo()
 
 # create env
-if use_forse:
-    env = ForcefullEnv(robot, device, camera_main, camera_wrist, env_config)
+env = EchoEnv(robot, device, camera_main, camera_wrist, env_config)
+# init logger
+if enable_logging:
+    logger = Logger(experiment_name, proprio_input)
 else:
-    env = ForcelessEnv(robot, device, camera_main, camera_wrist, env_config)
-logger = Logger(experiment_name = experiment_name)
+    logger = NullLogger()
 
 task_texts = language_instruction
 task = model.create_tasks(texts=task_texts)
@@ -87,12 +97,12 @@ count = 0
 
 while(1):
     count+=1
-    
+    observation = construct_observation(observation, action_proprio_metadata["proprio"], proprio_input)
     action = model.sample_actions(observation, task, rng=jax.random.PRNGKey(0),
                                 unnormalization_statistics=model.dataset_statistics["action"],)[0][0]
     observation = env.step(action)
     logger.log(observation)
-    observation = normalize_proprio(observation, action_proprio_metadata["proprio"])
+    
     
 
     try:  # used try so that if user pressed other than the given key error will not be shown 
@@ -100,7 +110,6 @@ while(1):
             print('Frequency', count / (time() - start))
             print('---------------------------------')
             print('Program stopped')
-            print(count)
             cmd = pause()           
             if cmd == -1:
                 break  # finishing the loop

@@ -27,6 +27,10 @@ def select_gripper_position(trajectory: Dict[str, Any]) -> Dict[str, Any]:
         trajectory["observation"]["proprio"] = trajectory["observation"]["state"][:, -2][:, None]
         return trajectory
 
+def select_force(trajectory: Dict[str, Any]) -> Dict[str, Any]:
+        trajectory["observation"]["proprio"] = trajectory["observation"]["state"][:, -1][:, None]
+        return trajectory
+
 def select_gripper_position_and_force(trajectory: Dict[str, Any]) -> Dict[str, Any]:
         trajectory["observation"]["proprio"] = trajectory["observation"]["state"][:, -2:]
         return trajectory
